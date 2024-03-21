@@ -1,0 +1,35 @@
+WHITESPACE  = _{ " " | "\t" | NEWLINE }
+linecomment = ${ "#" ~ (!NEWLINE ~ ANY)* }
+doccomment  = ${ "##" ~ (!NEWLINE ~ ANY)* }
+COMMENT     = _{ linecomment | doccomment }
+
+root = { SOI ~ func+ ~ EOI }
+
+// DECLARATIONS
+func       = { "fn" ~ lowername ~ parameters ~ "->" ~ ttype ~ block }
+parameters = { "(" ~ (parameter ~ ("," ~ parameter)*)? ~ ")" }
+parameter  = { lowername ~ ":" ~ ttype }
+
+// EXPRESSIONS
+expression   = _{ if_then_else | block | literal | lowername }
+block        =  { "{" ~ expression ~ (";" ~ expression)* ~ "}" }
+if_then_else =  { "if" ~ expression ~ "then" ~ expression ~ "else" ~ expression }
+
+// TYPES
+ttype = _{ uppername }
+
+// Literals
+literal = _{ bool | number | string }
+number  = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+bool    =  { "true" | "false" }
+string  = ${ "\"" ~ inner ~ "\"" }
+inner   = @{ char* }
+char    =  {
+    // Match anything except " or \
+    !("\"" | "\\") ~ ANY // Match \\ \" \/ \b \f \n \r \t
+
+  | "\\" ~ ("\"" | "\\" | "/" | "b" | "f" | "n" | "r" | "t")
+}
+
+lowername = @{ "_"? ~ ASCII_ALPHA_LOWER ~ (ASCII_ALPHANUMERIC | "_")* }
+uppername = @{ "_"? ~ ASCII_ALPHA_UPPER ~ (ASCII_ALPHANUMERIC | "_")* }
